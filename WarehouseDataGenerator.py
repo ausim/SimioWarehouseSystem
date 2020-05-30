@@ -6,14 +6,8 @@ Created on Sat May 30 10:47:56 2020
 """
 # %%
 # import associated packages
-from funcdefinations import    \
-    dataframesInitialization   \
-    ,completeOrder             \
-    ,completeSKU               \
-    ,completeLocation          \
-    ,completeOrderSKU          \
-    ,completeSKULocation       \
-    ,outputCSV
+from funcdefinations import dataframesInitialization,completeOrder,completeSKU,completeLocation,completeOrderSKU,completeSKULocation,outputCSV
+
 
 # %%
 # Set initial values (in case you don't want to use the xlsx file)
