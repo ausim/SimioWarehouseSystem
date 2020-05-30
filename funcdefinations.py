@@ -3,7 +3,6 @@ import numpy as np
 import random
 import datetime as dt
 from datetime import datetime
-from sklearn.utils import shuffle
 
 # Define the function to read from the file and return the parameter values
 #####################################################################################################################
@@ -43,10 +42,6 @@ def readFromExcel(FileName = 'ParameterSetting.xlsx', SheetName = 'Parameter Set
     return(Bounding, NumOrders, NumSKUs, SKUWeights, NumLocations, LineOrderDist, QuantityLineDist)
 
 
-# Define the function to read the SKUWeights from a csv file
-def readSKUWeights(FileName = 'SKUWeights.csv'):
-    # code to read from csv goes here
-    return(SKUWeights)
 
 
 # Define the function that get the paramter list corresponding to distribution and the domain name
@@ -252,8 +247,8 @@ def outputCSV(ParaList, OrderFilenName = 'Orders.csv', SKUFileName = 'Skus.csv',
     OrderFinialDataframe.to_csv('Orders.csv',index=False)
     SKUFinalDataframe.to_csv('Skus.csv',index=False)
     LocationFinalDataframe.to_csv('Locations.csv',index=False)
-    OrderSKUFinalDataframe.to_csv('Order_Sku.csv',index=False)
-    SKULocationFinalDataframe.to_csv('Sku_Location.csv',index=False) 
+    OrderSKUFinalDataframe.to_csv('OrderSku.csv',index=False)
+    SKULocationFinalDataframe.to_csv('SkuLocation.csv',index=False) 
 
 
 # Define the function that creates the initial dataframes
