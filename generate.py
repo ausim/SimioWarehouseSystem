@@ -1,26 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat May 30 10:47:56 2020
-
-@author: jsmith
-"""
-# %%
 # import associated packages
 from funcdefinations import dataframesInitialization,completeOrder,completeSKU,completeLocation,completeOrderSKU,completeSKULocation,outputCSV
 
 
-# %%
 # Set initial values (in case you don't want to use the xlsx file)
-Bounding         = [0, 0, 0, 10000, 10000, 10000, 10000, 0]
+Bounding         = [0, 0, 0, 100000, 100000, 100000, 100000, 0]
 # 0 - BLx; 1 - BLz; 2 - ULx, etc (going around clockwise - BL, UL, UR, BR)
 NumOrders        = 100
-NumSKUs          = 2000 # Generate an error if the number of SKUs exceeds the number of locations
+NumSKUs          = 200 # Generate an error if the number of SKUs exceeds the number of locations
 SKUWeights       = [] # if empty, all equally likely.  If not empty, verify that the numbers work
-NumLocations     = 2000
+NumLocations     = 200
 LineOrderDist    = ['Uniform', 1, 5]
 QuantityLineDist = ['Uniform', 1,  3]
 
-# %%
 
 # Generate the initial dataframes
 InitializationParaList = [NumOrders, NumSKUs, NumLocations, SKUWeights, LineOrderDist, QuantityLineDist]

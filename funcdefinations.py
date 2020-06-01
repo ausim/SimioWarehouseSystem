@@ -188,7 +188,8 @@ def dataframeSKULocationInitial(SKUDataframe, LocationDataframe, Weights=[], Rul
         
     NumRows = len(df)
     df[ColName] = sample(Population, Weights, NumRows, Replace)
-    
+    df['Inventory'] = 'inv' + df['LocationID']
+
     return df
 
 
