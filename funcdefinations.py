@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 import random
 import datetime as dt
+import math
 from datetime import datetime
+
 
 # Define the function to read from the file and return the parameter values
 #####################################################################################################################
@@ -105,9 +107,9 @@ def sample(Population, Weights, Size, Replace=False):
 def dataframeInitial(Rownumber, DataframeType):
     IDName = DataframeType + 'ID'
     # Generate the order dataframe
-    df = pd.DataFrame(np.arange(0,Rownumber,1),columns=[IDName])
+    df = pd.DataFrame(np.arange(1,Rownumber+1,1),columns=[IDName])
     # Modify the ID to let it have proper names
-    df[IDName] = df[IDName].apply(lambda x: DataframeType+ str(x))
+    # df[IDName] = df[IDName].apply(lambda x: DataframeType+ str(x))
     return df
 
 
@@ -163,21 +165,21 @@ def dataframeSKULocationInitial(SKUDataframe, LocationDataframe, Weights=[], Rul
             print('The number of Skus cannot be greater than the number of Locations in One_to_One Rule ')
             return
         df = SKUDataframe.copy()
-        ColName = 'LocationID'
+        ColName = 'PickNodeID'
         Replace = False
-        Population = LocationDataframe['LocationID'].tolist()
+        Population = LocationDataframe[ColName].tolist()
     elif Rule == 'otm':
         # each sku can be placed in multiple locations but each location can only hold one sku
         df = LocationDataframe.copy()
         ColName = 'SkuID'
         Replace = True
-        Population = SKUDataframe['SkuID'].tolist()
+        Population = SKUDataframe[ColName].tolist()
     elif Rule == 'mto':
         # each sku can only be placed in one location but each location can hold multiple skus
         df = SKUDataframe.copy()
-        ColName = 'LocationID'
+        ColName = 'PickNodeID'
         Replace = True
-        Population = LocationDataframe['LocationID'].tolist()
+        Population = LocationDataframe[ColName].tolist()
     elif Rule == 'mtm':       
         # each sku can be placed in multiple locations and each location can hold multiple skus
         column_names = ['SkuID','LocationID']
@@ -186,9 +188,10 @@ def dataframeSKULocationInitial(SKUDataframe, LocationDataframe, Weights=[], Rul
     else:
         print('Rule is not recognized,please check the Rule parameter.')
         
+    # Pair SKU and PcikNode
     NumRows = len(df)
     df[ColName] = sample(Population, Weights, NumRows, Replace)
-    df['Inventory'] = 'inv' + df['LocationID']
+
 
     return df
 
@@ -204,13 +207,18 @@ def dataframeSKULocationInitial(SKUDataframe, LocationDataframe, Weights=[], Rul
 # Output:        DateList: the return datetime list
 ##########################################################################################################################
 def datatimeGenerator(Size, Startdate='09/05/2020 00:00:00',Enddate='20/05/2020 00:00:00', TimeRule='fixed'):
+    
     Start = datetime.strptime( Startdate,'%d/%m/%Y %H:%M:%S')
     End = datetime.strptime( Enddate,'%d/%m/%Y %H:%M:%S')
     # get the zero time (00:00:00)
     ZeroTime = datetime(2019,8,10,0,0,0).time()
     AdjustDate = datetime.combine(Start.date(),ZeroTime)
     DaysBetweenDates = (End-Start).days
-    DateList = sample(range(DaysBetweenDates),Weights=[], Size=Size, Replace=True).tolist()
+    # check if same day
+    if DaysBetweenDates == 0:
+        DateList = [0]*Size
+    else:
+        DateList = sample(range(DaysBetweenDates),Weights=[], Size=Size, Replace=True).tolist()
     DateList.sort()
     for i in range(Size):
         if TimeRule == 'fixed':
@@ -240,16 +248,21 @@ def datatimeGenerator(Size, Startdate='09/05/2020 00:00:00',Enddate='20/05/2020 
 # Output:        five csv files
 #########################################################################################################################
 def outputCSV(ParaList, OrderFilenName = 'Orders.csv', SKUFileName = 'Skus.csv', LocationFileName = 'Locations.csv', OrderSKUFileName = 'Order_Sku.csv', SKULocationFileName = 'Sku_Location.csv' ):
-    OrderFinialDataframe = ParaList[0]
+    OrderFinalDataframe = ParaList[0]
     SKUFinalDataframe = ParaList[1]
     LocationFinalDataframe = ParaList[2]
     OrderSKUFinalDataframe = ParaList[3]
     SKULocationFinalDataframe = ParaList[4]
-    OrderFinialDataframe.to_csv('Orders.csv',index=False)
+       
+    # Write csv files
     SKUFinalDataframe.to_csv('Skus.csv',index=False)
     LocationFinalDataframe.to_csv('Locations.csv',index=False)
-    OrderSKUFinalDataframe.to_csv('OrderSku.csv',index=False)
-    SKULocationFinalDataframe.to_csv('SkuLocation.csv',index=False) 
+    OrderFinalDataframe.to_csv('Orders.csv', index=False)
+    SKULocationFinalDataframe.to_csv('SkuLoc.csv', index=False)
+    OrderSKUFinalDataframe.to_csv('OrderSkus.csv', index=False)
+    
+
+
 
 
 # Define the function that creates the initial dataframes
@@ -257,7 +270,7 @@ def outputCSV(ParaList, OrderFilenName = 'Orders.csv', SKUFileName = 'Skus.csv',
 # Input :              ParaList: the list stores the paramters
 #                                [0]: NumOrders - the number of orders
 #                                [1]: NumSKUs - the number of skus
-#                                [2]: NumLocations - the number of locations
+#                                [2]: NumLocations - the number of locations(PcikNode)
 #                                [3]: SKUWeights - the weight value associated with the population. List. If weights=[], use uniform 
 #                                                  distribution to select entries
 #                                [4]: LineOrderDist - the parameter list for the distribution of lines per order
@@ -276,7 +289,8 @@ def dataframesInitialization(ParaList):
     # Generate the order, sku and location initial dataframe
     OrderInitial = dataframeInitial(NumOrders,'Order')
     SKUInitial = dataframeInitial(NumSKUs, 'Sku')
-    LocationInitial = dataframeInitial(NumLocations,'Location')
+    # Location is the PickNode location
+    LocationInitial = dataframeInitial(NumLocations,'PickNode')
     # Generate the initial order-sku dataframe
     OrderSKUInitial = dataframeOrderSKUInitial(OrderInitial,SKUInitial,SKUWeights, LineOrderDist, QuantityLineDist)
     # Generate the initial sku-location dataframe
@@ -292,7 +306,7 @@ def dataframesInitialization(ParaList):
 # Output:       OrderFinalDataframe: the final order dataframe
 ########################################################################################################################
 def completeOrder(ParaList):
-
+    
     OrderDataframe = ParaList[0]
     NumOrders = len(OrderDataframe)
     # generate a new dataframe
@@ -300,13 +314,21 @@ def completeOrder(ParaList):
 
     # Add release date column
     ColName = 'ReleaseDate'
-    ReleaseList = datatimeGenerator(NumOrders, Startdate='09/05/2020 00:00:00',Enddate='20/05/2020 00:00:00')
+    ReleaseList = datatimeGenerator(NumOrders, Startdate='09/05/2020 00:00:00',Enddate='09/05/2020 00:00:00')
     OrderFinalDataframe[ColName] = ReleaseList
     # Add due date column
     ColName = 'DueDate'
     DueList = datatimeGenerator(NumOrders,Startdate='11/05/2020 23:59:59',Enddate='22/05/2020 23:59:59')
     OrderFinalDataframe[ColName] = DueList
 
+    # Add wave infomation
+    ColName = 'Wave' 
+    OrderFinalDataframe[ColName] = 1
+    
+    # Add final destination node column(for Simio)
+    ColName = 'FinalDestination' 
+    OrderFinalDataframe[ColName] = 'Input@Depot'
+    
     return OrderFinalDataframe
 
 
@@ -375,6 +397,9 @@ def completeLocation(ParaList):
 def completeOrderSKU(ParaList):
 
     OrderSKUDataframe = ParaList[0]
+    
+    OrderSKUDataframe['PickTime'] = 'Random.Exponential(60)'
+    OrderSKUDataframe['LoadTime'] = 'Random.Exponential(30)'
     # generate a new dataframe
     OrderSKUFinalDataframe = OrderSKUDataframe
 
@@ -385,13 +410,110 @@ def completeOrderSKU(ParaList):
 ########################################################################################################################
 # Input :                        ParaList: the list stores the paramters
 #                                          [0]: SKULocationDataframe - the initial sku_location dataframe
+#                                          [1]: PickNode and CoopNode combination dtatframe
 #
 # Output:       SKULocationFinalDataframe: the final sku_location dataframe
 ########################################################################################################################
 def completeSKULocation(ParaList):
 
     SKULocationDataframe = ParaList[0]
+    PickCoopPair = ParaList[1]
+       
     # generate a new dataframe
-    SKULocationFinalDataframe = SKULocationDataframe
+    SKULocationFinalDataframe = pd.merge(SKULocationDataframe, PickCoopPair, how = 'left', on='PickNodeID'  )
 
     return SKULocationFinalDataframe
+
+
+# Scheduler
+class CoopScheduler():
+    
+    # initialization
+    def __init__(self,PickerNum, TransNum):
+        self.pickerno = PickerNum
+        self.transno = TransNum
+        # dictionary that store routes for pickers and transporters
+        self.routes = dict()
+        
+    def simple_scheduler(self, Order, OrderSku, Capacity, Ctype = 'Order'):
+        
+        # go through each row in the ordersku df
+        # assign picker transporter pair
+        tempdf = Order.copy()
+        tempdf['PickerID'] = 0
+        tempdf['TransporterID'] = 0
+        for i in range(len(Order)):
+            if (i+1) % self.pickerno == 0:
+                pickerID = self.pickerno
+            else:
+                pickerID = (i+1) % self.pickerno
+                
+            if (i+1) % self.transno == 0:
+                transID = self.transno
+            else:
+                transID = (i+1) % self.transno
+            tempdf['PickerID'].iloc[i] = pickerID 
+            tempdf['TransporterID'].iloc[i] = transID 
+        
+        OrderSku = pd.merge(OrderSku, tempdf[['OrderID','PickerID','TransporterID']], how = 'left', on = 'OrderID')
+        
+        
+        # assign batch
+        # empty dataframe 
+        df = pd.DataFrame()       
+        for trans in range(self.transno):
+            # filter lines for current picker
+            gp = tempdf[['OrderID','TransporterID']][tempdf['TransporterID'] == trans+1].groupby('OrderID').size().reset_index(name = 'Drop')
+            # batch empty list
+            batchlist = []
+            for i in gp.index:
+                batchlist.append(math.ceil((i+1)/Capacity))
+            
+            gp['TransporterID'] = trans + 1
+            gp['BatchID'] = batchlist
+            df = pd.concat([df,gp])
+        # drop unrelated colum    
+        df = df.drop('Drop',axis = 1)
+        OrderSku = pd.merge(OrderSku, df, how = 'left', on=['OrderID','TransporterID'])
+        
+        return(OrderSku)
+    
+    def route_generator(self, OrderSkus, Skus):
+        
+        # dataframe contains Orderskus information and corresponding Pick and Coop Node ID
+        df = pd.merge(OrderSkus, Skus, how='left', on='SkuID')
+        
+        # picker route
+        for picker in range(1, self.pickerno+1):
+            mask = df['PickerID'] == picker
+            filter_df = df[['PickNodeID','CoopNodeID']][mask]
+            # route list
+            route = []
+            for i in range(len(filter_df)):
+                route.append('MyPickNode' + filter_df['PickNodeID'].iloc[i].astype(str))
+                route.append('MyCoopNode' + filter_df['CoopNodeID'].iloc[i].astype(str))
+            route.append('EndNode')
+            self.routes['route_p{}'.format(picker)] = route
+            
+        # transpoter route
+        for trans in range(1, self.transno+1):
+            # get batch number for that transporter
+            batchno = len(OrderSkus[OrderSkus['TransporterID'] == trans]['BatchID'].unique())
+            # route list
+            route = []
+            for batch in range(1, batchno+1):
+                # filter the data fro correct batch and transporter
+                mask = (df['TransporterID'] == trans) & (df['BatchID'] == batch)
+                coopcol = df[mask]['CoopNodeID']
+                # track last value
+                lastv = coopcol.iloc[0]
+                # build route
+                route.append('MyCoopNode' + lastv.astype(str))
+                for i in range(1,len(coopcol)):
+                    if coopcol.iloc[i] != lastv:
+                        lastv = coopcol.iloc[i]
+                        route.append('MyCoopNode' + lastv.astype(str))
+                route.append('Input@Depot')
+            route.append('EndNode')
+            self.routes['route_t{}'.format(trans)] = route
+                
