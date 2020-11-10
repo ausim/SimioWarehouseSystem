@@ -398,8 +398,8 @@ def completeOrderSKU(ParaList):
 
     OrderSKUDataframe = ParaList[0]
     
-    OrderSKUDataframe['PickTime'] = 'Random.Exponential(60)'
-    OrderSKUDataframe['LoadTime'] = 'Random.Exponential(30)'
+    OrderSKUDataframe['PickTime'] = 'Random.Exponential(6)'
+    OrderSKUDataframe['LoadTime'] = 'Random.Exponential(3)'
     # generate a new dataframe
     OrderSKUFinalDataframe = OrderSKUDataframe
 
@@ -434,6 +434,8 @@ class CoopScheduler():
         self.transno = TransNum
         # dictionary that store routes for pickers and transporters
         self.routes = dict()
+        # OrderSkus information
+        self.lineitem = pd.DataFrame()
         
     def simple_scheduler(self, Order, OrderSku, Capacity, Ctype = 'Order'):
         
@@ -481,7 +483,11 @@ class CoopScheduler():
     def route_generator(self, OrderSkus, Skus):
         
         # dataframe contains Orderskus information and corresponding Pick and Coop Node ID
-        df = pd.merge(OrderSkus, Skus, how='left', on='SkuID')
+        tempdf = pd.merge(OrderSkus, Skus, how='left', on='SkuID')
+        # add a frequency column
+        freq = tempdf.groupby(['TransporterID','BatchID','CoopNodeID']).size().reset_index(name = 'frequency')
+        df = pd.merge(tempdf, freq, how='left', on=['TransporterID','BatchID','CoopNodeID']).sort_values(['BatchID','frequency','CoopNodeID'])
+        self.lineitem = df
         
         # picker route
         for picker in range(1, self.pickerno+1):
