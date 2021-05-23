@@ -398,8 +398,8 @@ def completeOrderSKU(ParaList):
 
     OrderSKUDataframe = ParaList[0]
     
-    OrderSKUDataframe['PickTime'] = 'Random.Exponential(6)'
-    OrderSKUDataframe['LoadTime'] = 'Random.Exponential(3)'
+    OrderSKUDataframe['PickTime'] = '60'
+    OrderSKUDataframe['LoadTime'] = '30'
     # generate a new dataframe
     OrderSKUFinalDataframe = OrderSKUDataframe
 

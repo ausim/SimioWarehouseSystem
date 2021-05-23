@@ -1,0 +1,4 @@
+Time(Minutes),EntityID,ObjectName,ProcessID,StepName,Action
+0,Items.196,Model1,17.NewLineItemAllocation,[Assign] ChangePointer,Warning assigning state variable
+0,Items.196,Model1,17.NewLineItemAllocation,[Assign] ChangePointer,"Parent element 'MyPicker1' of state variable 'MyPicker1.ItemPointer' is an entity type, not a specific entity."
+
