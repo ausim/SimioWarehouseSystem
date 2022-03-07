@@ -22,31 +22,31 @@ QuantityLineDist = ['Uniform', 1,  3]
 
 # %%
 
-# Generate the initial dataframes
-InitializationParaList = [NumOrders, NumSKUs, NumLocations, SKUWeights, LineOrderDist, QuantityLineDist]
-[OrderInitial, SKUInitial, LocationInitial, OrderSKUInitial, SKULocationInitial]=dataframesInitialization(InitializationParaList)
+# # Generate the initial dataframes
+# InitializationParaList = [NumOrders, NumSKUs, NumLocations, SKUWeights, LineOrderDist, QuantityLineDist]
+# [OrderInitial, SKUInitial, LocationInitial, OrderSKUInitial, SKULocationInitial]=dataframesInitialization(InitializationParaList)
 
-# Complete the dataframes
-# Complete the order dataframe
-FinalOrderParaList = [OrderInitial]
-OrderFinalDataframe = completeOrder(FinalOrderParaList)
+# # Complete the dataframes
+# # Complete the order dataframe
+# FinalOrderParaList = [OrderInitial]
+# OrderFinalDataframe = completeOrder(FinalOrderParaList)
 
-# Complete the sku dataframe
-FinalSKUParaList = [SKUInitial]
-SKUFinalDataframe = completeSKU(FinalSKUParaList)
+# # Complete the sku dataframe
+# FinalSKUParaList = [SKUInitial]
+# SKUFinalDataframe = completeSKU(FinalSKUParaList)
 
-# Complete the location dataframe
-FinalLocationParaList = [LocationInitial, Bounding]
-LocationFinalDataframe = completeLocation(FinalLocationParaList)
+# # Complete the location dataframe
+# FinalLocationParaList = [LocationInitial, Bounding]
+# LocationFinalDataframe = completeLocation(FinalLocationParaList)
 
-# Complete the order_sku dataframe
-FinalOrderSKUParaList = [OrderSKUInitial]
-OrderSKUFinalDataframe = completeOrderSKU(FinalOrderSKUParaList)
+# # Complete the order_sku dataframe
+# FinalOrderSKUParaList = [OrderSKUInitial]
+# OrderSKUFinalDataframe = completeOrderSKU(FinalOrderSKUParaList)
 
-# Complete the sku_location dataframe
-FinalSKULocationParaList = [SKULocationInitial]
-SKULocationFinalDataframe = completeSKULocation(FinalSKULocationParaList)
+# # Complete the sku_location dataframe
+# FinalSKULocationParaList = [SKULocationInitial]
+# SKULocationFinalDataframe = completeSKULocation(FinalSKULocationParaList)
 
-# Output csv files
-OutputCSVParaList = [OrderFinalDataframe,SKUFinalDataframe, LocationFinalDataframe, OrderSKUFinalDataframe, SKULocationFinalDataframe]
-outputCSV(OutputCSVParaList)
+# # Output csv files
+# OutputCSVParaList = [OrderFinalDataframe,SKUFinalDataframe, LocationFinalDataframe, OrderSKUFinalDataframe, SKULocationFinalDataframe]
+# outputCSV(OutputCSVParaList)

@@ -1,0 +1,3 @@
+Time(Minutes),EntityID,ObjectName,ProcessID,StepName,Action
+2.17155535202506,Tracker.182,MyPickNode2,2.RoutingOutLogic,[SetNode] NextDestination,The value 'Destination' for property 'SetNode.NodeName' is a null or undefined reference.
+

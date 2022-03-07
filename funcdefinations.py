@@ -1,3 +1,10 @@
+"""
+Modified on March 3rd 2022
+
+@author:Jingwei Liu
+"""
+
+
 import pandas as pd
 import numpy as np
 import random
@@ -15,33 +22,34 @@ from datetime import datetime
 # Output:    The paramter settings
 #######################################################################################################################
 def readFromExcel(FileName = 'ParameterSetting.xlsx', SheetName = 'Parameter Setting', SKUWeightsSheet = 'SKU Weights'):
-    # Read the input csv file and get the parameter settings
+    # Read the input excel file and get the parameter settings
     PS = pd.read_excel('ParamterSetting.xlsx',sheet_name = 'Parameter Setting')
     SkuWeights = pd.read_excel('ParamterSetting.xlsx',sheet_name = 'SKU Weights')
     
     NumOrders = int(PS['Value'][PS['Name'] == 'OrderNo'].item())                     # number of orders
     NumSKUs = int(PS['Value'][PS['Name'] == 'SkuNo'].item())                         # number of skus
-    NumLocations = int(PS['Value'][PS['Name'] == 'LocationNo'].item())                  # number of locations
+    PickerNum = int(PS['Value'][PS['Name'] == 'PickerNum'].item())                   # number of pickers
+    TransporterNum = int(PS['Value'][PS['Name'] == 'TransporterNum'].item())         # number of transporters
     
-    BLX = int(PS['Value'][PS['Name'] == 'BL_corner'].item())                # The bottom left corner x coordinate
-    BLZ = int(PS['Add_value1'][PS['Name'] == 'BL_corner'].item())           # The bottom left corner z coordinate
-    BRX = int(PS['Value'][PS['Name'] == 'BR_corner'].item())                # The bottom right corner x coordinate
-    BRZ = int(PS['Add_value1'][PS['Name'] == 'BR_corner'].item())           # The bottom right corner z coordinate
-    ULX = int(PS['Value'][PS['Name'] == 'UL_corner'].item())                # The top left corner x coordinate
-    ULZ = int(PS['Add_value1'][PS['Name'] == 'UL_corner'].item())           # The top left corner z coordinate
-    URX = int(PS['Value'][PS['Name'] == 'UR_corner'].item())                # The top right corner x coordinate
-    URZ = int(PS['Add_value1'][PS['Name'] == 'UR_corner'].item())           # The top right corner z coordinate
-    Bounding = [BLX, BLZ, ULX, ULZ, URX, URZ, BRX, BRZ]
+    # BLX = int(PS['Value'][PS['Name'] == 'BL_corner'].item())                # The bottom left corner x coordinate
+    # BLZ = int(PS['Add_value1'][PS['Name'] == 'BL_corner'].item())           # The bottom left corner z coordinate
+    # BRX = int(PS['Value'][PS['Name'] == 'BR_corner'].item())                # The bottom right corner x coordinate
+    # BRZ = int(PS['Add_value1'][PS['Name'] == 'BR_corner'].item())           # The bottom right corner z coordinate
+    # ULX = int(PS['Value'][PS['Name'] == 'UL_corner'].item())                # The top left corner x coordinate
+    # ULZ = int(PS['Add_value1'][PS['Name'] == 'UL_corner'].item())           # The top left corner z coordinate
+    # URX = int(PS['Value'][PS['Name'] == 'UR_corner'].item())                # The top right corner x coordinate
+    # URZ = int(PS['Add_value1'][PS['Name'] == 'UR_corner'].item())           # The top right corner z coordinate
+    # Bounding = [BLX, BLZ, ULX, ULZ, URX, URZ, BRX, BRZ]
     
     LineDist = PS['Value'][PS['Name'] == 'LineDistribution'].item()                 # The distribution for the number of lines in an order
     LineOrderDist = getLineItemDistParas(PS, LineDist, 'LineDistribution')
     
     QuantityDist = PS['Value'][PS['Name'] == 'QuantityDistribution'].item()         # The distribution for the quantity in an order line
-    QuantityLineDist = getLineItemDistParas(PS, LineDist, 'QuantityDistribution')
+    QuantityLineDist = getLineItemDistParas(PS, QuantityDist, 'QuantityDistribution')
     
     SKUWeights = SkuWeights['Weight'].tolist()
     
-    return(Bounding, NumOrders, NumSKUs, SKUWeights, NumLocations, LineOrderDist, QuantityLineDist)
+    return(PickerNum, TransporterNum, NumOrders, NumSKUs, SKUWeights, LineOrderDist, QuantityLineDist)
 
 
 
@@ -108,8 +116,6 @@ def dataframeInitial(Rownumber, DataframeType):
     IDName = DataframeType + 'ID'
     # Generate the order dataframe
     df = pd.DataFrame(np.arange(1,Rownumber+1,1),columns=[IDName])
-    # Modify the ID to let it have proper names
-    # df[IDName] = df[IDName].apply(lambda x: DataframeType+ str(x))
     return df
 
 
@@ -140,7 +146,8 @@ def dataframeOrderSKUInitial(OrderDataframe, SKUDataframe, SKUWeights, LineOrder
     df['Quantity'] = 0
     if QuantityLineDist[0] == 'Uniform':
         df['Quantity'] = df['Quantity'].apply(lambda x: uniform(QuantityLineDist[1], QuantityLineDist[2]))
-    return df
+           
+    return df.astype('int')
 
 
 
@@ -158,7 +165,7 @@ def dataframeOrderSKUInitial(OrderDataframe, SKUDataframe, SKUWeights, LineOrder
 #
 # Output:                     df: the initial sku-location dataframe      
 ###########################################################################################################################
-def dataframeSKULocationInitial(SKUDataframe, LocationDataframe, Weights=[], Rule='oto'):
+def dataframeSKULocationInitial(SKUDataframe, LocationDataframe, Weights=[], Rule='mto'):
     if Rule == 'oto':
         # each sku can only be placed in one location and each location can only hold one sku
         if len(SKUDataframe) > len(LocationDataframe):
@@ -302,6 +309,7 @@ def dataframesInitialization(ParaList):
 # Input :                  ParaList: the list stores the paramters
 #                                    [0]: OrderDataframe - the initial order dataframe
 #                                    
+#                                    
 #
 # Output:       OrderFinalDataframe: the final order dataframe
 ########################################################################################################################
@@ -327,7 +335,7 @@ def completeOrder(ParaList):
     
     # Add final destination node column(for Simio)
     ColName = 'FinalDestination' 
-    OrderFinalDataframe[ColName] = 'Input@Depot'
+    OrderFinalDataframe[ColName] = 'MyDepot'
     
     return OrderFinalDataframe
 
@@ -342,15 +350,10 @@ def completeOrder(ParaList):
 def completeSKU(ParaList):
 
     SKUDataframe = ParaList[0]
-    NumSKUs = len(SKUDataframe)
 
     # generate a new dataframe
     SKUFinalDataframe = SKUDataframe.copy()
 
-    # Add volumn column
-    ColName = 'Volume'
-    VolumeArray = sample(range(10),Weights=[], Size=NumSKUs, Replace=True)
-    SKUFinalDataframe[ColName] = VolumeArray
 
     # Add weight column
     ColName = 'Weight'
@@ -391,6 +394,7 @@ def completeLocation(ParaList):
 ########################################################################################################################
 # Input :                     ParaList: the list stores the paramters 
 #                                       [0]: OrderSKUDataframe - the initial order_sku dataframe
+#                                       [1]: single item Flag - indicate that each row represent a single item
 #
 # Output:       OrderSKUFinalDataframe: the final order_sku dataframe
 ########################################################################################################################
@@ -398,8 +402,16 @@ def completeOrderSKU(ParaList):
 
     OrderSKUDataframe = ParaList[0]
     
-    OrderSKUDataframe['PickTime'] = '60'
-    OrderSKUDataframe['LoadTime'] = '30'
+    # if need a dataframe that each row represent a single item, make a new one
+    if ParaList[1] is True:
+        Columns = OrderSKUDataframe.columns
+        df = pd.DataFrame(columns=Columns)
+        for i in range(len(OrderSKUDataframe)):
+            Line = OrderSKUDataframe['Quantity'].iloc[i]
+            df = df.append([OrderSKUDataframe.iloc[i]]*Line,ignore_index=True)
+        df['Quantity'] = 1
+        OrderSKUDataframe = df
+    
     # generate a new dataframe
     OrderSKUFinalDataframe = OrderSKUDataframe
 
@@ -410,17 +422,16 @@ def completeOrderSKU(ParaList):
 ########################################################################################################################
 # Input :                        ParaList: the list stores the paramters
 #                                          [0]: SKULocationDataframe - the initial sku_location dataframe
-#                                          [1]: PickNode and CoopNode combination dtatframe
 #
 # Output:       SKULocationFinalDataframe: the final sku_location dataframe
 ########################################################################################################################
 def completeSKULocation(ParaList):
 
     SKULocationDataframe = ParaList[0]
-    PickCoopPair = ParaList[1]
+
        
     # generate a new dataframe
-    SKULocationFinalDataframe = pd.merge(SKULocationDataframe, PickCoopPair, how = 'left', on='PickNodeID'  )
+    SKULocationFinalDataframe = SKULocationDataframe
 
     return SKULocationFinalDataframe
 
