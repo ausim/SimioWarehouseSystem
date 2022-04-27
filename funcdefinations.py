@@ -436,6 +436,16 @@ def completeSKULocation(ParaList):
     return SKULocationFinalDataframe
 
 
+# Define The function that provide 
+
+
+
+
+
+
+
+
+
 # Scheduler
 class CoopScheduler():
     
